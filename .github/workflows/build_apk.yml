@@ -45,7 +45,7 @@ jobs:
       - name: 📦 Install Flutter Dependencies
         run: |
           mkdir -p assets/sounds assets/branding
-          flutter pub get
+          flutter pub get && python3 fix_plugins.py
 
       - name: 🔐 Configure Android Keystore (Auto-sign for installation)
         run: |
