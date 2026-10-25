@@ -27,6 +27,9 @@ dependencies:
   # Encrypted Credentials Storage (SIP passwords, TLS tokens)
   flutter_secure_storage: ^9.2.2
 
+  # Local preference persistence
+  shared_preferences: ^2.3.2
+
   # Android 16 Granular Runtime Permissions
   permission_handler: ^11.3.1
 
