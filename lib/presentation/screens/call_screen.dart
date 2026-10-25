@@ -1,6 +1,8 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:battery_plus/battery_plus.dart';
+
 import '../../core/telephony/sip_service.dart';
 
 class CallScreen extends StatefulWidget {
@@ -20,18 +22,17 @@ class CallScreen extends StatefulWidget {
 class _CallScreenState extends State<CallScreen> {
   final SipService _sipService = SipService();
   final Battery _battery = Battery();
+
   Timer? _callDurationTimer;
   Timer? _rtpStatsTimer;
   int _secondsElapsed = 0;
   String _callStatus = 'Calling...';
 
-  // Real-time RTP Quality Stats
   int _latencyMs = 28;
   double _jitterMs = 1.8;
   double _packetLoss = 0.0;
   int _signalBars = 4;
 
-  // Real-time Device Battery Level
   int _batteryLevel = 84;
   bool _isCharging = false;
 
@@ -40,7 +41,6 @@ class _CallScreenState extends State<CallScreen> {
     super.initState();
     _fetchBattery();
 
-    // Simulate connection after SIP ring
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
         setState(() {
@@ -87,7 +87,6 @@ class _CallScreenState extends State<CallScreen> {
     _rtpStatsTimer = Timer.periodic(const Duration(milliseconds: 1500), (timer) {
       if (mounted && _callStatus == 'Connected') {
         setState(() {
-          // Dynamic WebRTC RTP getStats() telemetry
           _latencyMs = 24 + (_secondsElapsed % 7) * 2;
           _jitterMs = 1.2 + ((_secondsElapsed % 5) * 0.3);
           _signalBars = _latencyMs < 100 ? 4 : 3;
@@ -116,6 +115,64 @@ class _CallScreenState extends State<CallScreen> {
     super.dispose();
   }
 
+  void _showDtmfDialog(BuildContext context) {
+    final List<String> tones = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'];
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        title: const Text(
+          'DTMF Keypad',
+          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        content: SizedBox(
+          width: 260,
+          child: Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 12,
+            runSpacing: 12,
+            children: tones.map((tone) {
+              return SizedBox(
+                width: 56,
+                height: 56,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () {
+                    _sipService.sendDTMF(tone);
+                    Navigator.pop(context);
+                  },
+                  child: Text(
+                    tone,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Close',
+              style: TextStyle(color: Colors.white70),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -124,14 +181,13 @@ class _CallScreenState extends State<CallScreen> {
         child: Column(
           children: [
             const SizedBox(height: 16),
-            // Real-Time Signal Strength, Jitter & Device Battery Meter Row
+
             if (_callStatus == 'Connected')
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Signal Strength & Jitter / Latency Meter Pill
                     GestureDetector(
                       onTap: () => _showQualityDiagnostics(context),
                       child: Container(
@@ -139,12 +195,13 @@ class _CallScreenState extends State<CallScreen> {
                         decoration: BoxDecoration(
                           color: const Color(0xFF10B981).withOpacity(0.12),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
+                          border: Border.all(
+                            color: const Color(0xFF10B981).withOpacity(0.3),
+                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            // 4-Bar Signal Indicator
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: List.generate(4, (index) {
@@ -170,13 +227,16 @@ class _CallScreenState extends State<CallScreen> {
                               ),
                             ),
                             const SizedBox(width: 4),
-                            const Icon(Icons.info_outline, color: Color(0xFF10B981), size: 14),
+                            const Icon(
+                              Icons.info_outline,
+                              color: Color(0xFF10B981),
+                              size: 14,
+                            ),
                           ],
                         ),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    // Real-time Device Battery Indicator
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
@@ -219,13 +279,15 @@ class _CallScreenState extends State<CallScreen> {
               ),
 
             const SizedBox(height: 24),
-            // Avatar
+
             CircleAvatar(
               radius: 54,
               backgroundColor: const Color(0xFF1E293B),
               child: const Icon(Icons.person, size: 64, color: Colors.white70),
             ),
+
             const SizedBox(height: 24),
+
             Text(
               widget.calleeNumber,
               style: const TextStyle(
@@ -234,7 +296,9 @@ class _CallScreenState extends State<CallScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
+
             const SizedBox(height: 12),
+
             if (_callStatus == 'Connected') ...[
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -291,8 +355,9 @@ class _CallScreenState extends State<CallScreen> {
                   fontWeight: FontWeight.w500,
                 ),
               ),
+
             const Spacer(),
-            // Call Controls (Mute, Keypad, Speaker, Hold)
+
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Wrap(
@@ -339,20 +404,22 @@ class _CallScreenState extends State<CallScreen> {
                 ],
               ),
             ),
+
             const SizedBox(height: 48),
-            // End Call Button
+
             GestureDetector(
               onTap: _endCall,
               child: Container(
                 width: 72,
                 height: 72,
                 decoration: const BoxDecoration(
-                  color: Color(0xFFF43F5E), // Crimson
+                  color: Color(0xFFF43F5E),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.call_end, color: Colors.white, size: 36),
               ),
             ),
+
             const SizedBox(height: 36),
           ],
         ),
@@ -362,6 +429,7 @@ class _CallScreenState extends State<CallScreen> {
 
   void _showTransferDialog(BuildContext context) {
     String targetExt = '';
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -408,7 +476,11 @@ class _CallScreenState extends State<CallScreen> {
                   const SizedBox(height: 16),
                   TextField(
                     autofocus: true,
-                    style: const TextStyle(color: Colors.white, fontSize: 18, fontFamily: 'monospace'),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontFamily: 'monospace',
+                    ),
                     keyboardType: TextInputType.phone,
                     decoration: InputDecoration(
                       hintText: 'Enter extension e.g. 1002',
@@ -443,7 +515,9 @@ class _CallScreenState extends State<CallScreen> {
                             backgroundColor: const Color(0xFFF43F5E),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
                       ),
@@ -460,7 +534,9 @@ class _CallScreenState extends State<CallScreen> {
                             foregroundColor: const Color(0xFF10B981),
                             side: const BorderSide(color: Color(0xFF10B981)),
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
                       ),
@@ -490,7 +566,11 @@ class _CallScreenState extends State<CallScreen> {
           children: [
             const Text(
               'SIP WebRTC Quality Diagnostics',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
             ),
             const SizedBox(height: 16),
             Wrap(
@@ -500,7 +580,13 @@ class _CallScreenState extends State<CallScreen> {
                 _DiagTile('Latency (RTT)', '${_latencyMs} ms', const Color(0xFF10B981)),
                 _DiagTile('Jitter', '${_jitterMs.toStringAsFixed(1)} ms', const Color(0xFF10B981)),
                 _DiagTile('Packet Loss', '${_packetLoss}%', const Color(0xFF10B981)),
-                _DiagTile('Battery Level', '$_batteryLevel%', _batteryLevel <= 15 ? const Color(0xFFF43F5E) : const Color(0xFF10B981)),
+                _DiagTile(
+                  'Battery Level',
+                  '$_batteryLevel%',
+                  _batteryLevel <= 15
+                      ? const Color(0xFFF43F5E)
+                      : const Color(0xFF10B981),
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -534,9 +620,17 @@ class _DiagTile extends StatelessWidget {
         children: [
           Text(label, style: const TextStyle(color: Colors.white54, fontSize: 11)),
           const SizedBox(height: 4),
-          Text(value, style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.bold)),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
+    );
   }
 }
 
