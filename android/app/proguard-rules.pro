@@ -28,3 +28,12 @@
 # Kotlin Coroutines and Reflection
 -keepnames class kotlinx.coroutines.** { *; }
 -dontwarn kotlinx.coroutines.**
+
+
+-dontwarn com.google.android.play.core.**
+-dontwarn io.flutter.embedding.**
+-dontwarn org.webrtc.**
+-keep class io.flutter.** { *; }
+-keep class org.webrtc.** { *; }
+-keep class com.cloudwebrtc.webrtc.** { *; }
+-keep class com.hiennv.flutter_callkit_incoming.** { *; }
