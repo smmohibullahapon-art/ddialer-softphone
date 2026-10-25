@@ -1,0 +1,65 @@
+name: ddialer
+description: "DDialer - 100% White-Label Cloud IP Softphone for Android (Target SDK 36, Version 2, Background VoIP Persistence)"
+publish_to: "none"
+version: 2.0.0+2
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Telephony & SIP Stack (RFC 3261 compliant WebRTC engine)
+  sip_ua: ^0.6.0
+  flutter_webrtc: ^0.11.7
+
+  # Android 16 (SDK 36) CallKit & Full-Screen Incoming Calling (Lock Screen & Over Other Apps)
+  flutter_callkit_incoming: ^2.0.4
+
+  # Hardware Audio Routing (Speakerphone / Earpiece / Bluetooth SCO)
+  audio_session: ^0.1.21
+
+  # State Management & DI
+  flutter_riverpod: ^2.5.1
+
+  # Encrypted Credentials Storage (SIP passwords, TLS tokens)
+  flutter_secure_storage: ^9.2.2
+
+  # Android 16 Granular Runtime Permissions
+  permission_handler: ^11.3.1
+
+  # Fast QR Code Scanner for 1-Click Provisioning
+  mobile_scanner: ^5.2.3
+
+  # Contacts Reader & T9 Dialing
+  flutter_contacts: ^1.1.9+2
+
+  # Modern UI Icons & Haptics
+  lucide_icons: ^0.257.0
+  intl: ^0.19.0
+  # Real-Time Device Battery Monitoring during VoIP calls
+  battery_plus: ^6.1.0
+  vibration: ^2.0.1
+  wakelock_plus: ^1.2.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/branding/app_icon.png"
+  min_sdk_android: 24
+  adaptive_icon_background: "#070D18"
+  adaptive_icon_foreground: "assets/branding/app_icon.png"
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/sounds/
+    - assets/branding/

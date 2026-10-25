@@ -1,0 +1,103 @@
+name: Build DDialer Android APK & AAB
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Choose build output'
+        required: true
+        default: 'apk_and_aab'
+        type: choice
+        options:
+          - 'apk_and_aab'
+          - 'apk_only'
+          - 'aab_only'
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ☕ Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: 🚀 Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: 🩺 Flutter Doctor
+        run: flutter doctor -v
+
+      - name: 📦 Install Flutter Dependencies
+        run: flutter pub get
+
+      - name: 🔐 Configure Android Keystore (Auto-sign for installation)
+        run: |
+          mkdir -p android/app
+          if [ ! -f "android/app/ddialer-release.jks" ]; then
+            echo "Generating release signing keystore..."
+            keytool -genkey -v -keystore android/app/ddialer-release.jks \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -alias ddialer-upload \
+              -storepass ddialer123 -keypass ddialer123 \
+              -dname "CN=DDialer Architect, OU=Telecom, O=DDialer Cloud, L=Dhaka, C=BD"
+          fi
+          cat <<EOF > android/key.properties
+          storePassword=ddialer123
+          keyPassword=ddialer123
+          keyAlias=ddialer-upload
+          storeFile=ddialer-release.jks
+          EOF
+
+      - name: 📱 Build Android Release APK (Universal for all phones)
+        if: ${{ github.event.inputs.build_type != 'aab_only' }}
+        run: |
+          flutter build apk --release
+
+      - name: ⚡ Build Android Release Split APKs (arm64-v8a, armeabi-v7a)
+        if: ${{ github.event.inputs.build_type != 'aab_only' }}
+        run: |
+          flutter build apk --release --split-per-abi
+
+      - name: 📦 Build Google Play App Bundle (.aab)
+        if: ${{ github.event.inputs.build_type != 'apk_only' }}
+        run: |
+          flutter build appbundle --release
+
+      - name: 📤 Upload Universal Release APK Artifact
+        if: ${{ github.event.inputs.build_type != 'aab_only' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ddialer-release-universal-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14
+
+      - name: 📤 Upload Split ABI APKs (arm64-v8a, armeabi-v7a)
+        if: ${{ github.event.inputs.build_type != 'aab_only' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ddialer-split-per-abi-apks
+          path: build/app/outputs/flutter-apk/app-*-release.apk
+          retention-days: 14
+
+      - name: 📤 Upload Google Play Bundle (.aab) Artifact
+        if: ${{ github.event.inputs.build_type != 'apk_only' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ddialer-playstore-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 14
