@@ -13,7 +13,7 @@ dependencies:
 
   # Telephony & SIP Stack (RFC 3261 compliant WebRTC engine)
   sip_ua: ^0.6.0
-  flutter_webrtc: ^0.11.7
+  flutter_webrtc: ^0.10.4
 
   # Android 16 (SDK 36) CallKit & Full-Screen Incoming Calling (Lock Screen & Over Other Apps)
   flutter_callkit_incoming: ^2.0.4
