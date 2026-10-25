@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'core/telephony/sip_service.dart';
 import 'presentation/screens/dialer_screen.dart';
 import 'presentation/screens/history_screen.dart';
@@ -58,7 +59,6 @@ class _MainTabNavigatorState extends State<MainTabNavigator> {
     _checkBtrcComplianceAndPermissions();
   }
 
-  /// Mandatory BTRC Telecom Regulatory Compliance & Android 14 Permissions
   Future<void> _checkBtrcComplianceAndPermissions() async {
     final prefs = await SharedPreferences.getInstance();
     final bool hasAgreed = prefs.getBool('btrc_compliance_accepted') ?? false;
@@ -80,7 +80,10 @@ class _MainTabNavigatorState extends State<MainTabNavigator> {
           children: [
             Icon(Icons.shield_outlined, color: Color(0xFF10B981)),
             SizedBox(width: 8),
-            Text('Regulatory Compliance', style: TextStyle(color: Colors.white, fontSize: 18)),
+            Text(
+              'Regulatory Compliance',
+              style: TextStyle(color: Colors.white, fontSize: 18),
+            ),
           ],
         ),
         content: const SingleChildScrollView(
@@ -100,7 +103,10 @@ class _MainTabNavigatorState extends State<MainTabNavigator> {
               if (mounted) Navigator.pop(context);
               _requestAndroid14Permissions();
             },
-            child: const Text('I Agree & Continue', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'I Agree & Continue',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
