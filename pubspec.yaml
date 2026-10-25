@@ -70,3 +70,4 @@ flutter:
 
 dependency_overrides:
   web: ^1.0.0
+  package_info_plus: 8.0.2
