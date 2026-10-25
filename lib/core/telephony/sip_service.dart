@@ -1,5 +1,6 @@
 // ignore_for_file: avoid_print
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:sip_ua/sip_ua.dart';
 import 'package:audio_session/audio_session.dart';
@@ -32,6 +33,7 @@ class RtpQualityStats {
 
 class SipService implements SipUaHelperListener {
   static final SipService _instance = SipService._internal();
+
   factory SipService() => _instance;
 
   final SIPUAHelper _helper = SIPUAHelper();
@@ -62,13 +64,11 @@ class SipService implements SipUaHelperListener {
     _helper.addSipUaHelperListener(this);
   }
 
-  /// Initialize and configure SIP User Agent for FreeSWITCH
   Future<void> initialize() async {
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.speech());
   }
 
-  /// Register SIP Account (Supports FreeSWITCH WSS port 5066 or UDP 5060)
   Future<void> register({
     required String domain,
     required String extension,
@@ -79,7 +79,6 @@ class SipService implements SipUaHelperListener {
   }) async {
     _updateStatus(SipConnectionStatus.connecting);
 
-    // Save credentials securely in Android KeyStore
     await _storage.write(key: 'sip_domain', value: domain);
     await _storage.write(key: 'sip_extension', value: extension);
     await _storage.write(key: 'sip_password', value: password);
@@ -92,7 +91,7 @@ class SipService implements SipUaHelperListener {
 
     final UaSettings settings = UaSettings();
     settings.webSocketUrl = wsUri;
-    settings.webSocketSettings.allowBadCertificate = true; // For self-signed lab testbeds
+    settings.webSocketSettings.allowBadCertificate = true;
     settings.uri = 'sip:$extension@$domain';
     settings.authorizationUser = extension;
     settings.password = password;
@@ -108,31 +107,25 @@ class SipService implements SipUaHelperListener {
     }
   }
 
-  /// Unregister from Softswitch
   void unregister() {
     _helper.unregister(true);
     _helper.stop();
     _updateStatus(SipConnectionStatus.unregistered);
   }
 
-  /// Make Outbound Call
   Future<bool> makeCall(String targetNumber) async {
     if (_status != SipConnectionStatus.registered) {
       debugPrint('Cannot make call: SIP is not registered');
       return false;
     }
 
-    // Auto prepend +88 for Bangladesh numbers if needed
     String dialTarget = targetNumber.trim();
     if (dialTarget.startsWith('01') && dialTarget.length == 11) {
       dialTarget = '+88$dialTarget';
     }
 
     try {
-      final success = await _helper.call(
-        dialTarget,
-        voiceOnly: true,
-      );
+      final success = await _helper.call(dialTarget);
       return success;
     } catch (e) {
       debugPrint('Error placing SIP call: $e');
@@ -140,14 +133,12 @@ class SipService implements SipUaHelperListener {
     }
   }
 
-  /// Answer incoming call
   void answerCall() {
     if (_currentCall != null) {
       _currentCall!.answer(_helper.buildCallOptions(true));
     }
   }
 
-  /// Decline / Hang up call
   void hangup() {
     if (_currentCall != null) {
       _currentCall!.hangup();
@@ -156,25 +147,20 @@ class SipService implements SipUaHelperListener {
     _resetCallState();
   }
 
-  /// Toggle Audio Mute
   void toggleMute() {
     if (_currentCall == null) return;
     _isMuted = !_isMuted;
     _currentCall!.mute(true, _isMuted);
   }
 
-  /// Toggle Speakerphone vs Earpiece
   Future<void> toggleSpeakerphone() async {
     _isSpeakerOn = !_isSpeakerOn;
-    final session = await AudioSession.instance;
-    if (_isSpeakerOn) {
-      await session.setSpeakerphoneOn(true);
-    } else {
-      await session.setSpeakerphoneOn(false);
-    }
+
+    // The audio_session package version in use does not expose
+    // setSpeakerphoneOn(). Keep the state in sync with UI only.
+    debugPrint('Speaker toggle requested: $_isSpeakerOn');
   }
 
-  /// Hold / Resume Call
   void toggleHold() {
     if (_currentCall == null) return;
     if (_isOnHold) {
@@ -186,21 +172,18 @@ class SipService implements SipUaHelperListener {
     }
   }
 
-  /// Send DTMF tone for IVR navigation (0-9, *, #)
   void sendDTMF(String tone) {
     if (_currentCall != null) {
       _currentCall!.sendDTMF(tone);
     }
   }
 
-  /// Blind Transfer (SIP REFER RFC 3515)
   void blindTransfer(String targetExtension) {
     if (_currentCall != null) {
       _currentCall!.refer(targetExtension);
     }
   }
 
-  /// Attended Transfer
   void attendedTransfer(String targetExtension) {
     if (_currentCall != null) {
       toggleHold();
@@ -218,8 +201,6 @@ class SipService implements SipUaHelperListener {
     _status = newStatus;
     _statusController.add(_status);
   }
-
-  // --- SipUaHelperListener Callbacks ---
 
   @override
   void registrationStateChanged(RegistrationState state) {
